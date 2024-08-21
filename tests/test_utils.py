@@ -7,6 +7,7 @@
 import math
 import os
 import re
+import json
 import sys
 import unittest
 from contextlib import contextmanager
@@ -49,6 +50,28 @@ CHAT_SAMPLE = {
     "assistant": "A father in Russia allowed his 8-year-old child to drive his car on an icy road and recorded the event. The child appeared to be handling the situation well, showcasing their driving skills despite the challenging conditions.",  # noqa: B950
 }
 
+TOOL_CHAT_SAMPLE = {
+    "messages": [
+        {"role": "system", "content": "You are a helpful assistant with access to the following functions. Use them if required"}, 
+        {"role": "user", "content": "Hi, I had a pizza for lunch today which was about 800 calories. Can you track this for me?"}, 
+        {"role": "assistant", "tool_calls": [{"id": "bDJIuDPjc", "type": "function", "function": {"name": "track_calories", "arguments": "{'meal': 'pizza', 'calories': 800, 'date': '2022-03-01'}"}}]}, 
+        {"role": "tool", "content": "{\"status\": \"success\", \"message\": \"Calories for your pizza meal have been successfully tracked for the date 2022-03-01\"}", "tool_call_id": "bDJIuDPjc"}, 
+        {"role": "assistant", "content": "Great! The calories for your pizza meal have been successfully tracked for today."},
+    ], 
+    "tools": [
+        {"type": "function", "function": {
+            "name": "track_calories", 
+            "description": "Track daily calorie intake", 
+            "parameters": {
+                "type": "object", 
+                "properties": {
+                    "meal": {"type": "string", "description": "The meal for which calories are being tracked"}, 
+                    "calories": {"type": "number", "description": "The number of calories consumed"}, 
+                    "date": {"type": "string", "format": "date", "description": "The date for which calories are being tracked"}
+                    }, 
+                "required": ["meal", "calories", "date"]}}}]
+}
+
 MESSAGE_SAMPLE_TRAIN_ON_INPUT = [
     Message(
         role="system",
@@ -73,6 +96,14 @@ MESSAGE_SAMPLE = [
     ),
 ]
 
+TOOL_MESSAGE_SAMPLE = [
+    Message(role="system", 
+            content=TOOL_CHAT_SAMPLE["messages"][0]["content"]+"\n<tools>"+json.dumps(TOOL_CHAT_SAMPLE["tools"])+"</tools>", masked=True),
+    Message(role="user", content=TOOL_CHAT_SAMPLE["messages"][1]["content"], masked=True),
+    Message(role="assistant", tool_calls=TOOL_CHAT_SAMPLE["messages"][2]),
+    Message(role="tool", content=TOOL_CHAT_SAMPLE["messages"][3]["content"], masked=True),
+    Message(role="assistant", content=TOOL_CHAT_SAMPLE["messages"][4]["content"]),
+]
 
 class DummyTokenizer(ModelTokenizer, Transform):
     def __init__(self, max_seq_len: Optional[int] = None):

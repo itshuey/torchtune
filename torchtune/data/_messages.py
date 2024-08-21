@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from typing import Any, Dict, List, Literal, Mapping, Optional, Union
+import json
 
 from torchtune.modules.transforms import Transform
 
@@ -13,6 +14,7 @@ Role = Literal[
     "user",  # Origin is user
     "assistant",  # Origin is the model output
     "ipython",  # Origin is return from a tool call
+    "tool", # Origin is return from a tool call (mistral)
 ]
 
 
@@ -54,6 +56,7 @@ class Message:
         self,
         role: Role,
         content: Union[str, List[Dict[str, str]]],
+        tool_calls: Optional[List[Dict[str, str]]] = None,
         masked: bool = False,
         ipython: bool = False,
         eot: bool = True,
@@ -64,6 +67,7 @@ class Message:
             if isinstance(content, str)
             else content
         )
+        self.tool_calls = tool_calls
         self.masked = masked
         self.ipython = ipython
         self.eot = eot
@@ -84,6 +88,7 @@ class Message:
         return cls(
             role=d["role"],
             content=d["content"],
+            tool_calls=d.get("tool_calls", None),
             masked=d.get("masked", False),
             ipython=d.get("ipython", False),
             eot=d.get("eot", True),
@@ -449,6 +454,101 @@ class JSONToMessages(Transform):
         for message in sample[self._column_map["messages"]]:
             if message["role"] == "system" and self.new_system_prompt is not None:
                 continue
+            message["masked"] = (message["role"] != "assistant") and (
+                not self.train_on_input
+            )
+            updated_messages.append(Message.from_dict(message))
+
+        return {"messages": updated_messages}
+
+
+class JSONToToolMessages(Transform):
+    """
+    Convert a single chat sample with identical json structure to torchtune's :class:`~torchtune.data.Message`
+    structure. This transform simply creates Message dataclasses from the provided jsons.
+
+    A single sample typically consists of a single optional system prompt and one or multiple
+    turns of user and assistant messages.
+
+    For example::
+
+        {
+            "messages": [
+                {
+                    "role": <system|user|assistant|tool>,
+                    "content": <message>,
+                },
+                ...
+            ],
+            "tools": [
+                {
+                }
+            ]
+        }
+
+    :class:`~torchtune.data.Message` follows::
+
+        [
+            {
+                "role": <system|user|assistant>,
+                "content": <message>,
+            },
+            ...
+        ]
+
+    Args:
+        train_on_input (bool): whether the prompt should remain unmasked. Default: False
+        column_map (Optional[Dict[str, str]]): a mapping from the expected columns ("messages")
+            to the new column names in the dataset. If None, assume these are identical.
+            Default is None.
+        new_system_prompt (Optional[str]): if specified, prepend a system message. This can
+            serve as instructions to guide the model response. Setting this will OVERRIDE any system
+            messages already present in the dataset. Default is None.
+
+    Raises:
+        ValueError: If ``column_map`` is provided and ``messages`` not in ``column_map``.
+    """
+
+    def __init__(
+        self,
+        train_on_input: bool = False,
+        column_map: Optional[Dict[str, str]] = None,
+        new_system_prompt: Optional[str] = None,
+    ):
+        self.train_on_input = train_on_input
+        self.new_system_prompt = new_system_prompt
+        if column_map:
+            if "messages" not in column_map:
+                raise ValueError(
+                    f"Expected a key of 'messages' in column_map but found {column_map.keys()}."
+                )
+            self._column_map = column_map
+        else:
+            self._column_map = {"messages": "messages"}
+
+    def __call__(self, sample: Mapping[str, Any]) -> Mapping[str, Any]:
+        """
+        Return a list of Message objects from the provided sample dict.
+
+        Args:
+            sample (Mapping[str, Any]): a single data sample with "messages" field pointing
+                to a list of dict messages.
+
+        Returns:
+            List[Message]: A list of messages with "role" and "content" fields.
+        """
+        updated_messages = []
+        if self.new_system_prompt is not None:
+            updated_messages.append(
+                Message(
+                    role="system", content=self.new_system_prompt, masked=True, eot=True
+                )
+            )
+        for message in sample[self._column_map["messages"]]:
+            if message["role"] == "system" and self.new_system_prompt is not None:
+                continue
+            if message["role"] == "system" and sample.get("tools") is not None:
+                message["content"] += "\n<tools>\n" + json.dumps(sample.get("tools")) + "</tools>"
             message["masked"] = (message["role"] != "assistant") and (
                 not self.train_on_input
             )
