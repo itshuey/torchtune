@@ -14,13 +14,13 @@ from torchtune.config._utils import _get_component_from_path
 from torchtune.data import (
     ChatFormat,
     CROSS_ENTROPY_IGNORE_IDX,
-    get_openai_messages,
-    get_sharegpt_messages,
     Message,
     validate_messages,
 )
 from torchtune.datasets._packed import PackedDataset
 from torchtune.modules.tokenizers import ModelTokenizer
+from torchtune.data import JSONToToolMessages
+from torchtune.modules.transforms import Transform
 
 
 class ToolChatDataset(Dataset):
@@ -71,7 +71,7 @@ class ToolChatDataset(Dataset):
         *,
         tokenizer: ModelTokenizer,
         source: str,
-        convert_to_messages: Callable[[Mapping[str, Any]], List[Message]],
+        convert_to_messages: Transform,
         chat_format: Optional[ChatFormat] = None,
         max_seq_len: int,
         train_on_input: bool = False,
@@ -97,7 +97,7 @@ class ToolChatDataset(Dataset):
         return self._prepare_sample(sample)
 
     def _prepare_sample(self, sample: Mapping[str, Any]) -> Dict[str, List[int]]:
-        messages = self._convert_to_messages(sample, self.train_on_input)
+        messages = self._convert_to_messages(sample)
         if self.chat_format is not None:
             messages = self.chat_format.format(messages)
         validate_messages(messages)
@@ -115,7 +115,6 @@ def tool_chat_dataset(
     tokenizer: ModelTokenizer,
     *,
     source: str,
-    conversation_style: str,
     chat_format: Optional[str] = None,
     max_seq_len: int,
     train_on_input: bool = False,
@@ -134,8 +133,6 @@ def tool_chat_dataset(
             in the filepath in ``data_files``. See Hugging Face's ``load_dataset``
             (https://huggingface.co/docs/datasets/en/package_reference/loading_methods#datasets.load_dataset.path)
             for more details.
-        conversation_style (str): string specifying expected style of conversations in the dataset
-            for automatic conversion to the :class:`~torchtune.data.Message` structure. Supported styles are: "sharegpt", "openai"
         chat_format (Optional[str]): full import path of :class:`~torchtune.data.ChatFormat` class used to format the messages.
             See the description in :class:`~torchtune.datasets.ChatDataset` for more details. For a list of all
             possible chat formats, check out :ref:`chat_formats`. Default: None.
@@ -147,10 +144,10 @@ def tool_chat_dataset(
 
     Examples:
         >>> from torchtune.datasets import chat_dataset
-        >>> dataset = chat_dataset(
+        >>> dataset = tool_chat_dataset(
         ...   tokenizer=tokenizer,
         ...   source="HuggingFaceH4/no_robots",
-        ...   chat_format="torchtune.data.ChatMLFormat",
+        ...   chat_format="torchtune.data.ToolChatMLFormat",
         ...   max_seq_len=2096,
         ...   train_on_input=True
         ... )
@@ -158,9 +155,9 @@ def tool_chat_dataset(
     This can also be accomplished via the yaml config::
 
         dataset:
-            _component_: torchtune.datasets.chat_dataset
+            _component_: torchtune.datasets.tool_chat_dataset
             source: HuggingFaceH4/no_robots
-            chat_format: torchtune.data.ChatMLFormat
+            chat_format: torchtune.data.ToolChatMLFormat
             max_seq_len: 2096
             train_on_input: True
 
@@ -174,7 +171,7 @@ def tool_chat_dataset(
     ds = ToolChatDataset(
         tokenizer=tokenizer,
         source=source,
-        convert_to_messages= get_openai_messages,
+        convert_to_messages= JSONToToolMessages(),
         chat_format=_get_component_from_path(chat_format)
         if chat_format is not None
         else None,
