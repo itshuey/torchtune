@@ -116,12 +116,12 @@ class TestToolChatMLFormat:
         Message(
             role="assistant",
             content='<|im_start|>assistant\n<tool_call>\n{"id": "bDJIuDPjc", "type": "function", "function": '
-            '{"name": "track_calories", "arguments": "{"meal": "pizza", "calories": 800, "date": "2022-03-01"}"}}\n</tool_call><|im_end|>\n'
+            '{"name": "track_calories", "arguments": "{\\"meal\\": \\"pizza\\", \\"calories\\": 800, \\"date\\": \\"2022-03-01\\"}"}}\n</tool_call><|im_end|>\n'
         ),
         Message(
             role="tool",
             content='<|im_start|>tool\n{\"status\": \"success\", \"message\": \"Calories for your pizza meal have '
-            'been successfully tracked for the date 2022-03-01\"}", "tool_call_id": "bDJIuDPjc"}<|im_end|>\n"'
+            'been successfully tracked for the date 2022-03-01\"}<|im_end|>\n'
         ),
         Message(
             role="assistant",

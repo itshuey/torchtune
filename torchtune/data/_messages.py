@@ -87,7 +87,7 @@ class Message:
         """
         return cls(
             role=d["role"],
-            content=d["content"],
+            content=d.get("content", None),
             tool_calls=d.get("tool_calls", None),
             masked=d.get("masked", False),
             ipython=d.get("ipython", False),
@@ -548,10 +548,12 @@ class JSONToToolMessages(Transform):
             if message["role"] == "system" and self.new_system_prompt is not None:
                 continue
             if message["role"] == "system" and sample.get("tools") is not None:
-                message["content"] += "\n<tools>\n" + json.dumps(sample.get("tools")) + "</tools>"
+                message["content"] += "\n<tools>" + json.dumps(sample.get("tools")) + "</tools>"
             message["masked"] = (message["role"] != "assistant") and (
                 not self.train_on_input
             )
+            if message.get("content") is None:
+              message["content"] = ""
             updated_messages.append(Message.from_dict(message))
 
         return {"messages": updated_messages}

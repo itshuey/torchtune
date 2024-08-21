@@ -260,8 +260,8 @@ class ToolChatMLFormat(ChatFormat):
     template = {
         "system": ("<|im_start|>system\n", "<|im_end|>\n"),
         "user": ("<|im_start|>user\n", "<|im_end|>\n"),
-        "assistant": ("<|im_start|>assistant\n", "<|im_end|>"),
-        "tool": ("<|im_start|>tool\n", "<|im_end|>"),
+        "assistant": ("<|im_start|>assistant\n", "<|im_end|>\n"),
+        "tool": ("<|im_start|>tool\n", "<|im_end|>\n"),
     }
 
     @classmethod
@@ -282,7 +282,8 @@ class ToolChatMLFormat(ChatFormat):
         formatted_dialogue = []
         for message in sample:
             if message.tool_calls is not None:
-                tool_call_message = ["<tool_call>\n" + json.dumps(tc) + "\n</tool>" for tc in message.tool_calls].join('\n')
+                print(message.tool_calls)
+                tool_call_message = '\n'.join(["<tool_call>\n" + json.dumps(tc) + "\n</tool_call>" for tc in message.tool_calls])
                 message_content = [{
                     "type": "text", 
                     "content": tool_call_message

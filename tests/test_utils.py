@@ -54,7 +54,7 @@ TOOL_CHAT_SAMPLE = {
     "messages": [
         {"role": "system", "content": "You are a helpful assistant with access to the following functions. Use them if required"}, 
         {"role": "user", "content": "Hi, I had a pizza for lunch today which was about 800 calories. Can you track this for me?"}, 
-        {"role": "assistant", "tool_calls": [{"id": "bDJIuDPjc", "type": "function", "function": {"name": "track_calories", "arguments": "{'meal': 'pizza', 'calories': 800, 'date': '2022-03-01'}"}}]}, 
+        {"role": "assistant", "tool_calls": [{"id": "bDJIuDPjc", "type": "function", "function": {"name": "track_calories", "arguments": "{\"meal\": \"pizza\", \"calories\": 800, \"date\": \"2022-03-01\"}"}}]}, 
         {"role": "tool", "content": "{\"status\": \"success\", \"message\": \"Calories for your pizza meal have been successfully tracked for the date 2022-03-01\"}", "tool_call_id": "bDJIuDPjc"}, 
         {"role": "assistant", "content": "Great! The calories for your pizza meal have been successfully tracked for today."},
     ], 
@@ -100,7 +100,7 @@ TOOL_MESSAGE_SAMPLE = [
     Message(role="system", 
             content=TOOL_CHAT_SAMPLE["messages"][0]["content"]+"\n<tools>"+json.dumps(TOOL_CHAT_SAMPLE["tools"])+"</tools>", masked=True),
     Message(role="user", content=TOOL_CHAT_SAMPLE["messages"][1]["content"], masked=True),
-    Message(role="assistant", tool_calls=TOOL_CHAT_SAMPLE["messages"][2]),
+    Message(role="assistant", content="", tool_calls=TOOL_CHAT_SAMPLE["messages"][2]["tool_calls"]),
     Message(role="tool", content=TOOL_CHAT_SAMPLE["messages"][3]["content"], masked=True),
     Message(role="assistant", content=TOOL_CHAT_SAMPLE["messages"][4]["content"]),
 ]

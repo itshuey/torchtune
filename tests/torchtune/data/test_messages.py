@@ -17,6 +17,7 @@ from torchtune.data._messages import (
     ChosenRejectedToMessages,
     InputOutputToMessages,
     JSONToMessages,
+    JSONToToolMessages,
     Message,
     ShareGPTToMessages,
 )
@@ -327,6 +328,6 @@ class TestJSONToToolMessages:
     samples = TOOL_CHAT_SAMPLE
 
     def test_call(self):
-        transform = JSONToMessages()
+        transform = JSONToToolMessages()
         converted_messages = transform(self.samples)
         assert_dialogue_equal(converted_messages["messages"], TOOL_MESSAGE_SAMPLE)
