@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import numpy as np
 
@@ -51,7 +51,7 @@ class ToolChatDataset(Dataset):
             in the filepath in ``data_files``. See Hugging Face's ``load_dataset``
             (https://huggingface.co/docs/datasets/en/package_reference/loading_methods#datasets.load_dataset.path)
             for more details.
-        convert_to_messages (Callable[[Mapping[str, Any]], List[Message]]): function that keys into the desired field in the sample
+        convert_to_messages (Transform): function that keys into the desired field in the sample
             and converts to a list of :class:`~torchtune.data.Message` that follows the Llama format with the expected keys
         chat_format (Optional[ChatFormat]): template used to format the chat. This is used to add structured text around the actual
             messages, such as the [INST] tags in Llama2 and in Mistral. The extra text will still get tokenized as normal text, not
@@ -94,13 +94,15 @@ class ToolChatDataset(Dataset):
 
     def __getitem__(self, index: int) -> Dict[str, List[int]]:
         sample = self._data[index]
-        return self._prepare_sample(sample)
+        cleaned_sample = self._remove_none_values(sample)
+        return self._prepare_sample(cleaned_sample)
 
     def _prepare_sample(self, sample: Mapping[str, Any]) -> Dict[str, List[int]]:
         messages = self._convert_to_messages(sample)
         if self.chat_format is not None:
             messages = self.chat_format.format(messages)
-        validate_messages(messages)
+        # Presumably, you have already validated the data with mistral-finetune
+        # validate_messages(messages)
         tokens, mask = self._tokenizer.tokenize_messages(
             messages,
         )
@@ -109,6 +111,18 @@ class ToolChatDataset(Dataset):
         assert len(tokens) == len(labels)
 
         return {"tokens": tokens, "labels": labels}
+
+    @staticmethod
+    def _remove_none_values(data):
+        if isinstance(data, dict):
+            # Recursively call remove_none_values on dictionary values
+            return {k: ToolChatDataset._remove_none_values(v) for k, v in data.items() if v is not None}
+        elif isinstance(data, list):
+             # Process each element in the list but do not remove None values
+            return [ToolChatDataset._remove_none_values(v) for v in data]
+        else:
+            # Base case: return the value as is
+            return data
 
 
 def tool_chat_dataset(

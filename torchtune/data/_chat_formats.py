@@ -280,7 +280,7 @@ class ToolChatMLFormat(ChatFormat):
             The formatted list of messages
         """
         formatted_dialogue = []
-        for message in sample:
+        for message in sample['messages']:
             if message.tool_calls is not None:
                 tool_call_message = '\n'.join(["<tool_call>\n" + json.dumps(tc) + "\n</tool_call>" for tc in message.tool_calls])
                 message_content = [{
