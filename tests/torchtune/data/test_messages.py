@@ -9,12 +9,15 @@ from tests.test_utils import (
     assert_dialogue_equal,
     CHAT_SAMPLE,
     MESSAGE_SAMPLE,
+    TOOL_CHAT_SAMPLE,
+    TOOL_MESSAGE_SAMPLE,
     MESSAGE_SAMPLE_TRAIN_ON_INPUT,
 )
 from torchtune.data._messages import (
     ChosenRejectedToMessages,
     InputOutputToMessages,
     JSONToMessages,
+    JSONToToolMessages,
     Message,
     ShareGPTToMessages,
 )
@@ -320,3 +323,11 @@ class TestJSONToMessages:
             JSONToMessages(
                 column_map={"bananas": "maybe_messages"},
             )
+
+class TestJSONToToolMessages:
+    samples = TOOL_CHAT_SAMPLE
+
+    def test_call(self):
+        transform = JSONToToolMessages()
+        converted_messages = transform(self.samples)
+        assert_dialogue_equal(converted_messages["messages"], TOOL_MESSAGE_SAMPLE)

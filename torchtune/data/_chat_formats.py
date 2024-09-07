@@ -6,6 +6,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple
+import json
 
 from torchtune.data._messages import Message, Role
 
@@ -230,6 +231,74 @@ class ChatMLFormat(ChatFormat):
                 Message(
                     role=message.role,
                     content=content,
+                    masked=message.masked,
+                    ipython=message.ipython,
+                    eot=message.eot,
+                ),
+            )
+        return formatted_dialogue
+    
+class ToolChatMLFormat(ChatFormat):
+    """
+    OpenAI's `Chat Markup Language
+    <https://github.com/MicrosoftDocs/azure-docs/blob/772c14eeabfa0c0c561d5c2d34ef19341f528b7b/articles/ai-services/openai/how-to/chat-markup-language.md>`_
+    used by their chat models.
+
+    It is the default chat format used by Hugging Face models.
+
+    .. code-block:: text
+
+        <|im_start|>system
+        Provide some context and/or instructions to the model.<|im_end|>
+        <|im_start|>user
+        The user’s message goes here<|im_end|>
+        <|im_start|>assistant
+        The assistant’s response goes here<|im_end|>
+
+    """
+
+    template = {
+        "system": ("<|im_start|>system\n", "<|im_end|>\n"),
+        "user": ("<|im_start|>user\n", "<|im_end|>\n"),
+        "assistant": ("<|im_start|>assistant\n", "<|im_end|>\n"),
+        "tool": ("<|im_start|>tool\n", "<|im_end|>\n"),
+    }
+
+    @classmethod
+    def format(
+        cls,
+        sample: List[Message],
+    ) -> List[Message]:
+        """
+        Format user and system messages with appropriate tags.
+
+        Args:
+            sample (List[Message]): a single conversation, structured as a list
+                of `Message` objects
+
+        Returns:
+            The formatted list of messages
+        """
+        formatted_dialogue = []
+        for message in sample['messages']:
+            if message.tool_calls is not None:
+                tool_call_message = '\n'.join(["<tool_call>\n" + json.dumps(tc) + "\n</tool_call>" for tc in message.tool_calls])
+                message_content = [{
+                    "type": "text", 
+                    "content": tool_call_message
+                }]
+            else: 
+                message_content = message.content
+            content = (
+                [{"type": "text", "content": cls.template[message.role][0]}]
+                + message_content
+                + [{"type": "text", "content": cls.template[message.role][1]}]
+            )
+            formatted_dialogue.append(
+                Message(
+                    role=message.role,
+                    content=content,
+                    tool_calls=message.tool_calls,
                     masked=message.masked,
                     ipython=message.ipython,
                     eot=message.eot,

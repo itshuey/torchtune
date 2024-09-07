@@ -7,7 +7,7 @@
 #
 # This config assumes that you've run the following command before launching
 # this run:
-#   tune download mistralai/Mistral-7B-v0.1 --hf-token <HF_TOKEN> --output-dir /tmp/Mistral-7B-v0.1
+#   tune download mistralai/Mistral-7B-v0.3 --hf-token <HF_TOKEN> --output-dir /tmp/Mistral-7B-v0.3
 #
 # Run this config on 4 GPUs using the following:
 #   tune run --nnodes 1 --nproc_per_node 4 full_finetune_distributed --config mistral/7B_full
@@ -24,13 +24,18 @@
 # Tokenizer
 tokenizer:
   _component_: torchtune.models.mistral.mistral_tokenizer
-  path: /tmp/Mistral-7B-v0.1/tokenizer.model
+  path: /ft/Mistral-7B-v0.3/tokenizer.model
 
 # Dataset
 dataset:
-  _component_: torchtune.datasets.alpaca_dataset
-seed: null
-shuffle: True
+  _component_: torchtune.datasets.tool_chat_dataset
+  source: json
+  chat_format: torchtune.data.ToolChatMLFormat
+  data_files: /data/glaive_train_mini.jsonl.corrected
+  max_seq_len: 4096
+  split: "train"
+seed: 42
+shuffle: False
 
 # Model Arguments
 model:
@@ -38,13 +43,13 @@ model:
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
-  checkpoint_dir: /tmp/Mistral-7B-v0.1
-  checkpoint_files: [
-    pytorch_model-00001-of-00002.bin,
-    pytorch_model-00002-of-00002.bin
+  checkpoint_dir: /ft/Mistral-7B-v0.3/
+  checkpoint_files: [model-00001-of-00003.safetensors,
+    model-00002-of-00003.safetensors,
+    model-00003-of-00003.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: /tmp/Mistral-7B-v0.1/
+  output_dir: /ft/Mistral-7B-v0.3/
   model_type: MISTRAL
 resume_from_checkpoint: False
 
@@ -72,6 +77,6 @@ dtype: bf16
 metric_logger:
   _component_: torchtune.utils.metric_logging.DiskLogger
   log_dir: ${output_dir}
-output_dir: /tmp/Mistral-7B-v0.1/
+output_dir: /ft/Mistral-7B-v0.3/
 log_every_n_steps: 1
 log_peak_memory_stats: False

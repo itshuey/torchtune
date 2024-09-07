@@ -36,7 +36,7 @@ def mistral_7b() -> TransformerDecoder:
         TransformerDecoder: Instantiation of Mistral 7B model
     """
     return mistral(
-        vocab_size=32_000,
+        vocab_size=32_768,
         num_layers=32,
         num_heads=32,
         num_kv_heads=8,
@@ -97,7 +97,7 @@ def lora_mistral_7b(
         lora_attn_modules=lora_attn_modules,
         apply_lora_to_mlp=apply_lora_to_mlp,
         apply_lora_to_output=apply_lora_to_output,
-        vocab_size=32_000,
+        vocab_size=32_768,
         num_layers=32,
         num_heads=32,
         num_kv_heads=8,
@@ -135,7 +135,7 @@ def mistral_reward_7b() -> TransformerDecoder:
     """
     return mistral_classifier(
         num_classes=1,
-        vocab_size=32_000,
+        vocab_size=32_768,
         num_layers=32,
         num_heads=32,
         num_kv_heads=8,
@@ -178,7 +178,7 @@ def lora_mistral_reward_7b(
         apply_lora_to_mlp=apply_lora_to_mlp,
         apply_lora_to_output=apply_lora_to_output,
         num_classes=1,
-        vocab_size=32_000,
+        vocab_size=32_768,
         num_layers=32,
         num_heads=32,
         num_kv_heads=8,

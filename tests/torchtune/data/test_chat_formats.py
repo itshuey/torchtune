@@ -4,10 +4,9 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-
 import pytest
-from tests.test_utils import assert_dialogue_equal, MESSAGE_SAMPLE
-from torchtune.data import ChatMLFormat, Llama2ChatFormat, Message, MistralChatFormat
+from tests.test_utils import assert_dialogue_equal, MESSAGE_SAMPLE, TOOL_MESSAGE_SAMPLE
+from torchtune.data import ChatMLFormat, Llama2ChatFormat, Message, MistralChatFormat, ToolChatMLFormat
 
 
 class TestLlama2ChatFormat:
@@ -97,3 +96,40 @@ class TestChatMLFormat:
     def test_format(self):
         actual = ChatMLFormat.format(MESSAGE_SAMPLE)
         assert_dialogue_equal(actual, self.expected_dialogue)
+
+class TestToolChatMLFormat:
+    expected_dialogue = [
+        Message(
+            role="system",
+            content='<|im_start|>system\nYou are a helpful assistant with access to the following functions. '
+            'Use them if required\n<tools>[{"type": "function", "function": {"name": "track_calories", "description": '
+            '"Track daily calorie intake", "parameters": {"type": "object", "properties": {"meal": {"type": "string", '
+            '"description": "The meal for which calories are being tracked"}, "calories": {"type": "number", "description": '
+            '"The number of calories consumed"}, "date": {"type": "string", "format": "date", "description": "The date for '
+            'which calories are being tracked"}}, "required": ["meal", "calories", "date"]}}}]</tools><|im_end|>\n',
+        ),
+        Message(
+            role="user",
+            content="<|im_start|>user\nHi, I had a pizza for lunch today which was about 800 calories. "
+            "Can you track this for me?<|im_end|>\n",
+        ),
+        Message(
+            role="assistant",
+            content='<|im_start|>assistant\n<tool_call>\n{"id": "bDJIuDPjc", "type": "function", "function": '
+            '{"name": "track_calories", "arguments": "{\\"meal\\": \\"pizza\\", \\"calories\\": 800, \\"date\\": \\"2022-03-01\\"}"}}\n</tool_call><|im_end|>\n'
+        ),
+        Message(
+            role="tool",
+            content='<|im_start|>tool\n{\"status\": \"success\", \"message\": \"Calories for your pizza meal have '
+            'been successfully tracked for the date 2022-03-01\"}<|im_end|>\n'
+        ),
+        Message(
+            role="assistant",
+            content='<|im_start|>assistant\nGreat! The calories for your pizza meal have been successfully tracked for today.<|im_end|>\n'
+        ),  
+    ]
+
+    def test_format(self):
+        actual = ToolChatMLFormat.format(TOOL_MESSAGE_SAMPLE)
+        assert_dialogue_equal(actual, self.expected_dialogue)
+

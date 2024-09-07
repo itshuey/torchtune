@@ -6,6 +6,7 @@
 
 from torchtune.datasets._alpaca import alpaca_cleaned_dataset, alpaca_dataset
 from torchtune.datasets._chat import chat_dataset, ChatDataset
+from torchtune.datasets._tool_chat import tool_chat_dataset, ToolChatDataset
 from torchtune.datasets._cnn_dailymail import cnn_dailymail_articles_dataset
 from torchtune.datasets._concat import ConcatDataset
 from torchtune.datasets._grammar import grammar_dataset
@@ -32,8 +33,10 @@ __all__ = [
     "InstructDataset",
     "slimorca_dataset",
     "ChatDataset",
+    "ToolChatDataset",
     "instruct_dataset",
     "chat_dataset",
+    "tool_chat_dataset",
     "text_completion_dataset",
     "TextCompletionDataset",
     "cnn_dailymail_articles_dataset",

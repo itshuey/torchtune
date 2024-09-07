@@ -9,6 +9,7 @@ from torchtune.data._chat_formats import (
     ChatMLFormat,
     Llama2ChatFormat,
     MistralChatFormat,
+    ToolChatMLFormat,
 )
 from torchtune.data._common import CROSS_ENTROPY_IGNORE_IDX
 from torchtune.data._converters import get_openai_messages, get_sharegpt_messages
@@ -17,6 +18,7 @@ from torchtune.data._messages import (
     ChosenRejectedToMessages,
     InputOutputToMessages,
     JSONToMessages,
+    JSONToToolMessages,
     Message,
     Role,
     ShareGPTToMessages,
@@ -40,7 +42,9 @@ __all__ = [
     "Llama2ChatFormat",
     "MistralChatFormat",
     "ChatMLFormat",
+    "ToolChatMLFormat",
     "JSONToMessages",
+    "JSONToToolMessages",
     "ShareGPTToMessages",
     "truncate",
     "Message",
